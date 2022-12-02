@@ -1,0 +1,48 @@
+datasource db {
+  url      = "sqlserver://localhost:1433;trustServerCertificate=true;user=sa;password=Password1!;database=DemoData"
+  provider = "sqlserver"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             Int              @id @default(autoincrement())
+  createdAt      DateTime         @default(now())
+  username       String
+  email          String           @unique
+  hashedPassword String           @db.VarChar(60)
+  displayName    String?          @db.VarChar(64)
+  followers      FollowRelation[] @relation("followers")
+  follows        FollowRelation[] @relation("follows")
+  posts          Post[]           @relation()
+  likedPosts     LikeRelation[]   @relation()
+}
+
+model FollowRelation {
+  user      User @relation(fields: [userId], references: [id], name: "followers", onDelete: NoAction, onUpdate: NoAction)
+  userId    Int
+  follows   User @relation(fields: [followsId], references: [id], name: "follows", onDelete: NoAction, onUpdate: NoAction)
+  followsId Int
+
+  @@id([userId, followsId])
+}
+
+model Post {
+  id        Int            @id @default(autoincrement())
+  createdAt DateTime       @default(now())
+  text      String         @db.VarChar(255)
+  author    User           @relation(fields: [authorId], references: [id])
+  authorId  Int
+  likes     LikeRelation[] @relation()
+}
+
+model LikeRelation {
+  user   User @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  userId Int
+  post   Post @relation(fields: [postId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  postId Int
+
+  @@id([userId, postId])
+}
